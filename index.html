@@ -1,188 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Video Downloader</title>
+<input id="videoURL" placeholder="Paste video page URL">
 
-<style>
-body{
-    margin:0;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
-    font-family:Arial;
-    color:white;
-}
-
-.container{
-    width:500px;
-    background:#111;
-    padding:35px;
-    border-radius:15px;
-    text-align:center;
-    box-shadow:0 0 40px rgba(0,0,0,0.6);
-}
-
-h1{
-    margin-bottom:20px;
-}
-
-input{
-    width:100%;
-    padding:12px;
-    border:none;
-    border-radius:8px;
-    font-size:16px;
-    margin-bottom:10px;
-}
-
-.buttons{
-    display:flex;
-    gap:10px;
-}
-
-button{
-    flex:1;
-    padding:12px;
-    border:none;
-    border-radius:8px;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-.preview{
-    background:#2196F3;
-    color:white;
-}
-
-.download{
-    background:#4CAF50;
-    color:white;
-}
-
-video{
-    width:100%;
-    margin-top:20px;
-    border-radius:10px;
-    display:none;
-}
-
-.progress{
-    height:8px;
-    background:#333;
-    border-radius:5px;
-    margin-top:15px;
-    overflow:hidden;
-}
-
-.bar{
-    height:100%;
-    width:0%;
-    background:#4CAF50;
-}
-
-.status{
-    margin-top:10px;
-    font-size:14px;
-    color:#ccc;
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<h1>Video Downloader</h1>
-
-<input id="videoURL" placeholder="Paste direct video link (.mp4)">
-
-<div class="buttons">
-<button class="preview" onclick="previewVideo()">Preview</button>
-<button class="download" onclick="downloadVideo()">Download</button>
-</div>
-
-<video id="videoPlayer" controls></video>
-
-<div class="progress">
-<div class="bar" id="progressBar"></div>
-</div>
-
-<div class="status" id="status">Waiting for video link...</div>
-
-</div>
+<button onclick="downloadVideo()">Download</button>
 
 <script>
-
-const input = document.getElementById("videoURL")
-const player = document.getElementById("videoPlayer")
-const statusText = document.getElementById("status")
-const progress = document.getElementById("progressBar")
-
-function previewVideo(){
-
-    const url = input.value.trim()
-
-    if(!url){
-        statusText.innerText="Please paste a video link"
-        return
-    }
-
-    player.src = url
-    player.style.display="block"
-
-    statusText.innerText="Preview loaded"
-}
-
 async function downloadVideo(){
 
-    const url = input.value.trim()
+const url = document.getElementById("videoURL").value
 
-    if(!url){
-        statusText.innerText="Please paste a video link"
-        return
-    }
+const res = await fetch("http://localhost:3000/download",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({url:url})
+})
 
-    try{
+const blob = await res.blob()
 
-        statusText.innerText="Downloading video..."
-        progress.style.width="10%"
-
-        const response = await fetch(url)
-
-        progress.style.width="40%"
-
-        const blob = await response.blob()
-
-        progress.style.width="80%"
-
-        const blobURL = URL.createObjectURL(blob)
-
-        const a = document.createElement("a")
-        a.href = blobURL
-        a.download = "video_" + Date.now() + ".mp4"
-
-        document.body.appendChild(a)
-        a.click()
-
-        a.remove()
-
-        progress.style.width="100%"
-        statusText.innerText="Download complete ✔"
-
-    }
-    catch(err){
-
-        statusText.innerText="Download failed (CORS or blocked link)"
-
-    }
+const a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="video.mp4"
+a.click()
 
 }
-
 </script>
-
-</body>
-</html>
