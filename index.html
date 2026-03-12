@@ -5,7 +5,6 @@
 <title>Video Downloader</title>
 
 <style>
-
 body{
     margin:0;
     height:100vh;
@@ -18,86 +17,76 @@ body{
 }
 
 .container{
+    width:500px;
     background:#111;
-    padding:40px;
+    padding:35px;
     border-radius:15px;
-    width:420px;
-    box-shadow:0 0 40px rgba(0,0,0,0.6);
     text-align:center;
+    box-shadow:0 0 40px rgba(0,0,0,0.6);
 }
 
 h1{
-    margin-bottom:25px;
-}
-
-.inputBox{
-    display:flex;
-    gap:10px;
+    margin-bottom:20px;
 }
 
 input{
-    flex:1;
+    width:100%;
     padding:12px;
     border:none;
     border-radius:8px;
     font-size:16px;
+    margin-bottom:10px;
+}
+
+.buttons{
+    display:flex;
+    gap:10px;
 }
 
 button{
-    padding:12px 18px;
+    flex:1;
+    padding:12px;
     border:none;
     border-radius:8px;
-    cursor:pointer;
     font-weight:bold;
-    transition:.2s;
+    cursor:pointer;
 }
 
-.download{
-    width:100%;
-    margin-top:15px;
-    background:#4CAF50;
-    color:white;
-}
-
-.download:hover{
-    background:#3ca043;
-}
-
-.paste{
+.preview{
     background:#2196F3;
     color:white;
 }
 
-.paste:hover{
-    background:#1976D2;
+.download{
+    background:#4CAF50;
+    color:white;
 }
 
-.status{
-    margin-top:15px;
-    font-size:14px;
-    color:#aaa;
+video{
+    width:100%;
+    margin-top:20px;
+    border-radius:10px;
+    display:none;
 }
 
 .progress{
-    width:100%;
     height:8px;
     background:#333;
     border-radius:5px;
-    margin-top:10px;
+    margin-top:15px;
     overflow:hidden;
 }
 
 .bar{
-    width:0%;
     height:100%;
+    width:0%;
     background:#4CAF50;
-    transition:width .4s;
 }
 
-.footer{
-    margin-top:20px;
-    font-size:12px;
-    opacity:.6;
+.status{
+    margin-top:10px;
+    font-size:14px;
+    color:#ccc;
 }
 
 </style>
@@ -109,92 +98,89 @@ button{
 
 <h1>Video Downloader</h1>
 
-<div class="inputBox">
-<input id="videoURL" placeholder="Paste video URL here">
-<button class="paste" onclick="pasteLink()">Paste</button>
+<input id="videoURL" placeholder="Paste direct video link (.mp4)">
+
+<div class="buttons">
+<button class="preview" onclick="previewVideo()">Preview</button>
+<button class="download" onclick="downloadVideo()">Download</button>
 </div>
 
-<button class="download" onclick="downloadVideo()">Download Video</button>
+<video id="videoPlayer" controls></video>
 
 <div class="progress">
 <div class="bar" id="progressBar"></div>
 </div>
 
-<div class="status" id="status">Waiting for link...</div>
-
-<div class="footer">
-Supports direct video files (.mp4, .webm, .mov)
-</div>
+<div class="status" id="status">Waiting for video link...</div>
 
 </div>
 
 <script>
 
 const input = document.getElementById("videoURL")
+const player = document.getElementById("videoPlayer")
 const statusText = document.getElementById("status")
 const progress = document.getElementById("progressBar")
 
-async function pasteLink(){
-    try{
-        const text = await navigator.clipboard.readText()
-        input.value = text
-        statusText.innerText = "Link pasted!"
-    }catch{
-        statusText.innerText = "Clipboard access denied"
-    }
-}
-
-function simulateProgress(){
-    let value = 0
-    progress.style.width="0%"
-    
-    const interval = setInterval(()=>{
-        value+=10
-        progress.style.width=value+"%"
-        
-        if(value>=100){
-            clearInterval(interval)
-        }
-    },120)
-}
-
-function downloadVideo(){
+function previewVideo(){
 
     const url = input.value.trim()
 
-    if(url === ""){
-        statusText.innerText="⚠ Please enter a video link"
+    if(!url){
+        statusText.innerText="Please paste a video link"
         return
     }
 
-    if(!url.startsWith("http")){
-        statusText.innerText="⚠ Invalid URL"
-        return
-    }
+    player.src = url
+    player.style.display="block"
 
-    statusText.innerText="Preparing download..."
-    simulateProgress()
-
-    const link = document.createElement("a")
-
-    const filename = "video_" + Date.now() + ".mp4"
-
-    link.href = url
-    link.download = filename
-
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    statusText.innerText="Download started ✔"
-
+    statusText.innerText="Preview loaded"
 }
 
-input.addEventListener("keypress",function(e){
-    if(e.key==="Enter"){
-        downloadVideo()
+async function downloadVideo(){
+
+    const url = input.value.trim()
+
+    if(!url){
+        statusText.innerText="Please paste a video link"
+        return
     }
-})
+
+    try{
+
+        statusText.innerText="Downloading video..."
+        progress.style.width="10%"
+
+        const response = await fetch(url)
+
+        progress.style.width="40%"
+
+        const blob = await response.blob()
+
+        progress.style.width="80%"
+
+        const blobURL = URL.createObjectURL(blob)
+
+        const a = document.createElement("a")
+        a.href = blobURL
+        a.download = "video_" + Date.now() + ".mp4"
+
+        document.body.appendChild(a)
+        a.click()
+
+        a.remove()
+
+        progress.style.width="100%"
+        statusText.innerText="Download complete ✔"
+
+    }
+    catch(err){
+
+        statusText.innerText="Download failed (CORS or blocked link)"
+
+    }
+
+}
 
 </script>
 
